@@ -1,0 +1,10 @@
+# Prefer versions already validated on the UNO Q. Pin the tested environment for reproducibility.
+Flask>=3.0,<4
+numpy
+opencv-python
+rapidocr
+onnxruntime
+edge-impulse-linux
+paho-mqtt>=2.0,<3
+# Official client providing rtde.rtde; do not substitute ur_rtde.
+UrRtde @ git+https://github.com/UniversalRobots/RTDE_Python_Client_Library.git@main

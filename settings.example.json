@@ -1,0 +1,30 @@
+{
+  "robot": {
+    "host": "192.0.2.10",
+    "port": 30004,
+    "frequency": 10
+  },
+  "mqtt": {
+    "host": "localhost",
+    "port": 1883,
+    "username": "",
+    "password": "",
+    "topic_prefix": "futurecom/ur"
+  },
+  "application": {
+    "auto_start_worker": false,
+    "auto_recovery": true,
+    "restart_limit": 3,
+    "restart_window_seconds": 300,
+    "worker_timeout_seconds": 45
+  },
+  "camera": {
+    "device": null,
+    "camera_name": "USB 2.0 Camera",
+    "preview_fps": 5
+  },
+  "vision": {
+    "side_a_threshold": 550.0,
+    "side_b_threshold": 620.0
+  }
+}

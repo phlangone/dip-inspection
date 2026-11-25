@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token }}">
+<title>Futurecom 2026 · Inspeção DIP</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body data-page="{{ page }}">
+<header class="header">
+<a class="identity" href="/" aria-label="Dashboard Futurecom"><span class="senai">SENAI<span> SÃO PAULO</span></span><span class="event">FUTURECOM <strong>2026</strong></span></a>
+<nav aria-label="Navegação principal">
+{% for path,label,key in [('/', 'Dashboard', 'index'),('/products','Produtos','products'),('/settings','Configurações','settings'),('/system','Sistema','system')] %}
+<a href="{{ path }}" {% if page == key %}class="active" aria-current="page"{% endif %}>{{ label }}</a>
+{% endfor %}
+</nav><button id="auth-button" class="button quiet">{{ 'Sair do modo admin' if admin else 'Acesso administrativo' }}</button>
+</header>
+<main>
+<div class="page-heading"><div><p class="eyebrow">AUTOMAÇÃO · VISÃO COMPUTACIONAL · EDGE AI</p><h1>{% block title %}Inspeção e classificação de CI DIP{% endblock %}</h1><p class="subtitle">{% block subtitle %}Arduino UNO Q · Universal Robots · Processamento local{% endblock %}</p></div><div id="station-badge" class="badge neutral">PROCESSAMENTO PARADO</div></div>
+<div id="notice" class="notice" role="status" hidden></div>
+{% block content %}{% endblock %}
+<footer><span>Escola SENAI “Anchieta” · Futurecom 2026</span><span><b class="teal">Arduino UNO Q</b><span class="footer-dot"> / </span><b class="purple">Dragonwing · Edge AI</b></span></footer>
+</main>
+<dialog id="login-dialog"><form id="login-form"><p class="eyebrow">ACESSO LOCAL</p><h2>Administração</h2><p>Entre para configurar e controlar o processamento.</p><label>Senha administrativa<input type="password" id="admin-password" autocomplete="current-password" required maxlength="256"></label><p id="login-error" class="error" role="alert"></p><div class="actions"><button type="button" id="cancel-login" class="button quiet">Cancelar</button><button class="button primary" type="submit">Entrar</button></div></form></dialog>
+</body></html>

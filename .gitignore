@@ -1,0 +1,27 @@
+# Python and editor artifacts
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.vscode/
+.idea/
+# Station-local configuration and credentials
+/settings.json
+/products.json
+/production_state.json
+/*.json.bak
+/deployment/futurecom.env
+.env
+.env.*
+!*.env.example
+# Runtime state, logs and camera calibration
+/.supervisor.lock
+/logs/
+/empty_reference*.jpg
+/camera_test.jpg
+/presence_current.jpg
+# Research assets are distributed separately after approval
+/dataset/
+/models/*
+!/models/README.md

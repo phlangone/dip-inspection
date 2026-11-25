@@ -1,0 +1,20 @@
+{
+  "reject_destination": 5,
+  "products": [
+    {
+      "part_number": "SN74HC86N",
+      "destination": 1,
+      "enabled": true
+    },
+    {
+      "part_number": "CD74HC73E",
+      "destination": 2,
+      "enabled": true
+    },
+    {
+      "part_number": "SN74HC14N",
+      "destination": 3,
+      "enabled": true
+    }
+  ]
+}

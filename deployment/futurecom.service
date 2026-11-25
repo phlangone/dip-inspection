@@ -1,0 +1,21 @@
+[Unit]
+Description=DIP Inspection - Station Supervisor
+After=network.target
+
+[Service]
+Type=simple
+# Adjust the user, group, and paths to the actual UNO Q installation.
+User=arduino
+Group=arduino
+WorkingDirectory=/home/arduino/futurecom
+EnvironmentFile=/home/arduino/futurecom/deployment/futurecom.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/arduino/futurecom/.venv/bin/python /home/arduino/futurecom/main.py
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+KillMode=control-group
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

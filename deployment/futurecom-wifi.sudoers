@@ -1,0 +1,3 @@
+# Install only after adjusting the service user and validating with visudo.
+# The empty argument string restricts execution to no arguments; the helper validates stdin JSON.
+arduino ALL=(root) NOPASSWD: /usr/local/libexec/futurecom-wifi ""
