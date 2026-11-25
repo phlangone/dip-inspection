@@ -1,101 +1,90 @@
 # DIP Inspection
 
-Edge-based visual inspection and robotic sorting of dual in-line package (DIP) integrated circuits using an Arduino UNO Q and a Universal Robots controller.
+**Embedded AI for visual quality inspection and robotic sorting of integrated circuits.**
 
-Developed as an industrial inspection demonstrator for Futurecom 2026 at UniSENAI-SP, Campus Vila Mariana. The application combines classical computer vision, optical character recognition (OCR), and visual anomaly detection on the edge device. Robot movements are managed by a separate robot-side program.
+DIP Inspection is an industrial automation demonstrator developed at UniSENAI-SP, Campus Vila Mariana, for Futurecom 2026. It integrates an Arduino UNO Q, a USB camera and a Universal Robots collaborative robot to identify and inspect dual in-line package (DIP) integrated circuits and sort them according to their type and visual condition.
 
-## System overview
+The system combines classical computer vision, optical character recognition (OCR), AI-based anomaly detection and industrial communication in a single edge computing application. Image processing and inference run locally on the UNO Q, without relying on a remote inference server.
+
+## Technologies
+
+| Technology | Application |
+| --- | --- |
+| Arduino UNO Q / Qualcomm Dragonwing | Linux-based edge computing and local inference |
+| Python | Application logic, process orchestration and system integration |
+| OpenCV | Image acquisition, preprocessing and part presence detection |
+| RapidOCR | Integrated circuit marking recognition and identification |
+| Edge Impulse | Visual anomaly detection on two inspection views |
+| Universal Robots / URScript | Robotic handling and physical sorting |
+| RTDE over TCP/IP | Bidirectional synchronization between the robot and the edge device |
+| Flask, HTML, CSS and JavaScript | Local monitoring and administration dashboard |
+| MQTT | Optional robot telemetry for IIoT integration |
+| Linux / systemd | Application deployment and process management |
+
+## System architecture
 
 ```mermaid
 flowchart LR
-    C[USB camera] --> W[UNO Q inspection worker]
-    W --> P[Part presence]
-    W --> O[RapidOCR and part-number matching]
-    W --> A[Side A anomaly inference]
-    W --> B[Side B anomaly inference]
-    W <--> R[UR controller / RTDE]
-    W --> S[Local Flask supervisor]
-    S --> D[Browser dashboard]
-    W --> M[Optional MQTT broker]
+    CAM[USB camera] --> V
+
+    subgraph UNO["Arduino UNO Q · Edge processing"]
+        direction TB
+        V["Computer vision<br/>OpenCV · RapidOCR · Edge Impulse"]
+        W["Inspection worker<br/>Classification and cycle logic"]
+        S["Supervisor<br/>Flask · Persistent state"]
+        V --> W
+        W --> S
+    end
+
+    UR["Universal Robots<br/>URScript · Motion control"] <-->|RTDE / TCP| W
+    S --> UI["Web dashboard"]
+    W -->|MQTT · optional| IIOT["IIoT telemetry"]
 ```
 
-The robot requests inspection stages through RTDE. The UNO Q captures images, evaluates the requested stage, and returns the result. The final sorting destination depends on a recognized and enabled part number and two accepted side inspections. The application does not generate robot trajectories.
+The robot-side program coordinates physical handling and requests inspection stages through RTDE. The UNO Q processes each request and returns inspection results and the sorting destination. The application separates the inspection worker from the web supervisor, keeping camera acquisition, inference and communication independent of the dashboard.
 
-| Stage | Method |
-| --- | --- |
-| Presence | Grayscale reference-image differencing, Gaussian blur, thresholding and morphological filtering |
-| Identification | RapidOCR, heuristic candidate ranking, exact matching against the enabled product catalog |
-| Side A / B | Two Edge Impulse inference executables; mean visual anomaly score compared with side-specific thresholds |
-| Sorting | RTDE integer registers; destinations 1–4 for enabled products, 5 for rejects |
-| Monitoring | Local dashboard, persistent classification history and optional MQTT robot telemetry |
+## Inspection pipeline
 
-## Repository structure
-
-| Path | Purpose |
-| --- | --- |
-| `main.py` | Station entry point |
-| `dip_inspection/core/` | Supervisor, inspection worker, configuration, state, product catalog, dashboard assets |
-| `dip_inspection/vision/` | Camera acquisition, presence detection, OCR and anomaly inference |
-| `dip_inspection/integrations/` | RTDE, MQTT and Wi-Fi interfaces |
-| `tools/` | Dataset collection, camera/OCR and presence diagnostics |
-| `deployment/` | Optional systemd service and Wi-Fi helper |
-| `tests/` | Hardware-independent tests |
-| `models/`, `docs/` | Model requirements and technical documentation |
-
-## Quick start
-
-Requirements: Arduino UNO Q running Linux, a compatible USB camera, Python 3 with a virtual environment, a Universal Robots controller with a compatible robot-side RTDE program, and both Edge Impulse model exports. A local MQTT broker is optional.
-
-From the repository root:
-
-```sh
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install -r requirements.txt
-cp settings.example.json settings.json
-cp products.example.json products.json
-cp deployment/futurecom.env.example deployment/futurecom.env
-chmod 600 settings.json deployment/futurecom.env
+```mermaid
+flowchart TD
+    P["1. Part presence<br/>Reference-image differencing"] --> O["2. Identification<br/>OCR and product matching"]
+    O --> A["3. Side A<br/>Visual anomaly detection"]
+    A --> B["4. Side B<br/>Visual anomaly detection"]
+    B --> C{"Final classification"}
+    C -->|Accepted| OK["Product-specific destination"]
+    C -->|Rejected| NOK["Reject destination"]
 ```
 
-1. Set the actual robot IP, camera and MQTT settings in `settings.json`. The example robot address is a documentation placeholder. Review the product-to-destination mapping.
-2. Supply `models/side_a.eim` and `models/side_b.eim` and make them executable.
-3. Prepare the local RapidOCR model cache before offline operation.
-4. With the station stopped and the robot in its empty-rail inspection pose, capture and validate a reference image:
+- **Presence detection:** identifies whether a component is available on the feed rail using grayscale image differencing, thresholding and morphological filtering.
+- **Part identification:** extracts markings with RapidOCR and matches the recognized part number against an enabled product catalog.
+- **Quality inspection:** evaluates two views using independent Edge Impulse models with configurable anomaly thresholds.
+- **Robotic sorting:** communicates the final classification and destination through RTDE registers; the robot-side program executes the physical movements.
+- **Supervision:** provides live camera preview, inspection status, configurable products and thresholds, classification history and optional MQTT telemetry.
 
-   ```sh
-   python -m tools.test_presence --capture --reference empty_reference.jpg
-   python -m tools.test_presence --reference empty_reference.jpg --samples 30
-   ```
+## Software organization
 
-5. Generate an administrator password hash and set `FUTURECOM_ADMIN_HASH` in `deployment/futurecom.env` (see [deployment](docs/deployment.md)). Then start the supervisor:
+| Directory | Responsibility |
+| --- | --- |
+| [`dip_inspection/core/`](dip_inspection/core/) | Inspection lifecycle, application state, configuration and web supervisor |
+| [`dip_inspection/vision/`](dip_inspection/vision/) | Camera, presence detection, OCR and anomaly inference |
+| [`dip_inspection/integrations/`](dip_inspection/integrations/) | RTDE, MQTT and network interfaces |
+| [`tools/`](tools/) | Dataset collection and camera/vision diagnostics |
+| [`deployment/`](deployment/) | Linux service configuration |
+| [`tests/`](tests/) | Hardware-independent tests |
 
-   ```sh
-   set -a
-   . deployment/futurecom.env
-   set +a
-   python main.py
-   ```
+## Technical documentation
 
-Open `http://<UNO-Q-IP>:5000` on the station network. The worker is not started automatically in the example configuration; use the authenticated dashboard after commissioning the station.
-
-## Documentation and reproducibility
-
-- [Inspection pipeline and RTDE interface](docs/architecture.md)
-- [Illustrative robot-side URScript handshake](docs/urscript.md)
+- [Architecture and inspection interfaces](docs/architecture.md)
+- [Illustrative URScript handshake](docs/urscript.md)
 - [Deployment and diagnostics](docs/deployment.md)
-- [Research assets and reproduction checklist](docs/reproducibility.md)
+- [Research assets](docs/reproducibility.md)
 
-Run hardware-independent tests with:
+## Academic context
 
-```sh
-python -m unittest discover -s tests -t . -v
-```
+This repository accompanies the study *Desenvolvimento e avaliação de um sistema de inspeção visual baseado em IA embarcada para triagem robotizada de circuitos integrados DIP*.
 
-The dashboard and runtime messages retain the original Portuguese localization. Code documentation is in English. The example configuration records the side thresholds from the supplied station snapshot, not a universal calibration.
+It presents the software architecture and implementation of a physical industrial inspection demonstrator, with emphasis on Edge AI, machine vision, robotic integration and Industrial IoT. The source is provided as a technical reference; the trained models, dataset, complete robot program and station-specific calibration are not distributed here.
 
-## Citation and availability
+## License
 
-This repository is intended as a software companion to the study *Desenvolvimento e avaliação de um sistema de inspeção visual baseado em IA embarcada para triagem robotizada de circuitos integrados DIP*. Add the verified bibliographic citation, DOI (if assigned), and a tagged software release when the publication details and release are finalized.
-
-The trained model binaries, robot-side program, calibration reference and dataset are not included in the main source distribution. See the reproducibility checklist for their roles and availability. The source code is released under the [MIT License](LICENSE). Third-party dependencies and external research assets retain their own licensing terms.
+Source code is available under the [MIT License](LICENSE). Third-party dependencies retain their respective licenses.
